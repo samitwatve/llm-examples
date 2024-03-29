@@ -8,7 +8,7 @@ import streamlit as st
 #     "[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/streamlit/llm-examples?quickstart=1)"
 
 openai_api_key = st.secrets["OPEN_AI_API_KEY"]
-
+st.write(len(st.secrets["OPEN_AI_API_KEY"]))
 st.title("💬 Chatbot")
 st.caption("🚀 A streamlit chatbot powered by OpenAI LLM")
 if "messages" not in st.session_state:
