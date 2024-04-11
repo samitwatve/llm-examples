@@ -15,9 +15,6 @@ serp_api_key = st.secrets["SERP_API_KEY"]
 groq_models = ["llama2-70b-4096", "mixtral-8x7b-32768", "gemma-7b-it"]
 
 
-
-
-
 from crewai_tools import WebsiteSearchTool
 WST = WebsiteSearchTool()
 
@@ -61,7 +58,6 @@ writer = Agent(
 )
 
 
-
 # Research task
 research_task = Task(
   description=(
@@ -73,6 +69,7 @@ research_task = Task(
   expected_output='A comprehensive 3 paragraphs long report on the latest AI trends.',
   tools=[WST],
   agent=researcher,
+  human_input=True,
 )
 
 # Writing task with language model configuration
@@ -90,29 +87,20 @@ write_task = Task(
 )
 
 
-
 # Forming the tech-focused crew with enhanced configurations
 crew = Crew(
   agents=[researcher, writer],
   tasks=[research_task, write_task],
   process=Process.sequential, # Optional: Sequential task execution is default,
-  verbose=True
+  verbose=True,
+  full_output=True
 )
 
-
-# class CapturingList(list):
-#     def __enter__(self):
-#         self._stdout = sys.stdout
-#         sys.stdout = self._stringio = StringIO()
-#         return self
-#     def __exit__(self, *args):
-#         self.extend(self._stringio.getvalue().splitlines())
-#         del self._stringio    # free up some memory
-#         sys.stdout = self._stdout
 
 if topic := st.chat_input("What would you like to research?"):
     # Starting the task execution process with enhanced feedback
     result = crew.kickoff(inputs={'topic': topic})
     st.text_area("Agent's Thought Process:", result, height=300)
 
+st.write(result)
 
