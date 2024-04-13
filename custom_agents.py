@@ -1,13 +1,29 @@
+from typing import Dict
+
+from crewai import BaseModel
 from crewai import Agent
 
+class LLM(BaseModel):
+    def __init__(self, model_name: str, configuration: Dict):
+        self.model_name = model_name
+        self.configuration = configuration
+
+    def generate_prompt(self, *args, **kwargs):
+        # Implement your prompt generation logic here.
+        pass
+
+    def predict(self, *args, **kwargs):
+        # Implement your prediction logic here.
+        pass
+
 # Placeholder for the large language model instance. Replace 'your_llm_instance' with your actual LLM instance variable.
-llm = {
-    "model_name": "gpt-3.5-turbo",
-    "configuration": {
+llm = LLM(
+    model_name="gpt-3.5-turbo",
+    configuration={
         "temperature": 0.7,
         "max_tokens": 150
     }
-}
+)
 
 assistant = Agent(
   role='General Assistant',

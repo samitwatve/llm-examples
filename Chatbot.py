@@ -38,43 +38,7 @@ with st.sidebar:
 
 # Reflect the selected avatar and the custom or selected avatar's prompt
 st.write(f"Selected Avatar: {st.session_state.selected_avatar.title}")
-st.write(f"Custom Prompt: {st.session_state.custom_prompt_content}")
-
-
-allowed_types = ['txt', 'xls', 'pdf', 'doc', 'md', 'json', 'py', 'R']
-uploaded_file = st.sidebar.file_uploader("Choose a file", type=allowed_types)
-
-
-def parse_file(uploaded_file):
-    """
-    Parses the content of an uploaded file.
-    
-    Args:
-    uploaded_file: The uploaded file object from Streamlit's file_uploader.
-
-    Returns:
-    A string containing the content of the file.
-    """
-    # Ensure there is a file to process
-    if uploaded_file is not None:
-        # Determine the file type from the file name
-        file_type = uploaded_file.name.split('.')[-1]
-        
-        # Process a Python file
-        if file_type == 'py':
-            # Read the content of the file
-            content = uploaded_file.getvalue().decode("utf-8")
-            return content
-        # Placeholder for additional file types
-        # elif file_type == 'txt':
-        #     ...
-    else:
-        # Return None or an appropriate message if no file is uploaded
-        return None
-
-if uploaded_file is not None:
-    st.write(parse_file(uploaded_file))
-
+#st.write(f"Custom Prompt: {st.session_state.custom_prompt_content}")
 
 # Ensure 'messages' exists in st.session_state, initializing if necessary
 if "messages" not in st.session_state or not st.session_state.messages:

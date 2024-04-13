@@ -1,106 +1,75 @@
-from crewai import Agent
 import streamlit as st
+from crewai import Agent, Task, Crew, Process
 from langchain_groq import ChatGroq
-from crewai import Task
-from crewai import Crew, Process
-from contextlib import redirect_stdout
-import io
-import streamlit as st
+from crewai_tools import BaseTool
 
-
-
+# Streamlit secrets for API keys
 openai_api_key = st.secrets["OPEN_AI_API_KEY"]
 groq_api_key = st.secrets["GROQ_API_KEY"]
 serp_api_key = st.secrets["SERP_API_KEY"]
 groq_models = ["llama2-70b-4096", "mixtral-8x7b-32768", "gemma-7b-it"]
 
+# Setup the language model
+llm = ChatGroq(temperature=0.7, groq_api_key=groq_api_key, model_name=groq_models[1])
 
-from crewai_tools import WebsiteSearchTool
-WST = WebsiteSearchTool()
+# Notes management tool
+class NotesTool(BaseTool):
+    name = "Notes Tool"
+    description = "Manages a dynamic notes system to track user preferences and habits."
 
-llm = ChatGroq(
-            temperature=0.7, 
-            groq_api_key = groq_api_key, 
-            model_name=groq_models[1]
-        )
+    def __init__(self):
+        self.notes = {}
 
+    def add_or_update_note(self, category, detail):
+        self.notes[category] = detail
 
-# Creating a senior researcher agent with memory and verbose mode
-researcher = Agent(
-  role='Senior Researcher',
-  goal='Uncover groundbreaking technologies in {topic}',
-  verbose=True,
-  memory=True,
-  backstory=(
-    "Driven by curiosity, you're at the forefront of"
-    "innovation, eager to explore and share knowledge that could change"
-    "the world."
-  ),
-  tools=[WST],
-  allow_delegation=True,
-  llm = llm
+    def get_notes(self):
+        return self.notes
+
+    def _run(self, command: str, **kwargs):
+        if command == "update":
+            self.add_or_update_note(kwargs['category'], kwargs['detail'])
+        elif command == "get":
+            return self.get_notes()
+        return "Notes updated"
+
+notes_tool = NotesTool()
+
+# Waiter agent setup
+waiter = Agent(
+    role='Waiter',
+    goal='Engage in casual conversation while updating and maintaining user preference notes.',
+    tools=[notes_tool],
+    verbose=True,
+    memory=True,
+    backstory=(
+        "As a dedicated Waiter, you are skilled in remembering customers' likes and dislikes, "
+        "always ready to provide personalized service based on your detailed notes."
+    )
 )
 
-# Creating a writer agent with custom tools and delegation capability
-writer = Agent(
-  role='Writer',
-  goal='Narrate compelling tech stories about {topic}',
-  verbose=True,
-  memory=True,
-  backstory=(
-    "With a flair for simplifying complex topics, you craft"
-    "engaging narratives that captivate and educate, bringing new"
-    "discoveries to light in an accessible manner."
-  ),
-  tools=[WST],
-  allow_delegation=False,
-  llm = llm
+# Task definition for the Waiter
+conversation_task = Task(
+    description=(
+        "Engage the user in conversation, listen for any preference updates, and adjust notes accordingly."
+    ),
+    expected_output='Updated notes reflecting the conversation.',
+    tools=[notes_tool],
+    agent=waiter,
 )
 
-
-# Research task
-research_task = Task(
-  description=(
-    "Identify the next big trend in {topic}."
-    "Focus on identifying pros and cons and the overall narrative."
-    "Your final report should clearly articulate the key points"
-    "its market opportunities, and potential risks."
-  ),
-  expected_output='A comprehensive 3 paragraphs long report on the latest AI trends.',
-  tools=[WST],
-  agent=researcher,
-  human_input=True,
-)
-
-# Writing task with language model configuration
-write_task = Task(
-  description=(
-    "Compose an insightful article on {topic}."
-    "Focus on the latest trends and how it's impacting the industry."
-    "This article should be easy to understand, engaging, and positive."
-  ),
-  expected_output='A 4 paragraph article on {topic} advancements formatted as markdown.',
-  tools=[WST],
-  agent=writer,
-  async_execution=False,
-  output_file='new-blog-post.md'  # Example of output customization
-)
-
-
-# Forming the tech-focused crew with enhanced configurations
+# Crew setup
 crew = Crew(
-  agents=[researcher, writer],
-  tasks=[research_task, write_task],
-  process=Process.sequential, # Optional: Sequential task execution is default,
-  verbose=True,
-  full_output=True
+    agents=[waiter],
+    tasks=[conversation_task]
 )
 
-
-if topic := st.chat_input("What would you like to research?"):
-    # Starting the task execution process with enhanced feedback
-    result = crew.kickoff(inputs={'topic': topic})
-    st.text_area("Agent's Thought Process:", result, height=300)
-
-st.write(result)
+# Streamlit UI
+st.title("Waiter Assistant")
+user_input = st.text_input("Talk to the Waiter:", "")
+if st.button("Update Conversation"):
+    # Mock example to kickoff with user input
+    crew.kickoff(inputs={'command': 'update', 'category': 'conversation', 'detail': user_input})
+    st.write("Notes updated:")
+    st.json(notes_tool.get_notes())
 
