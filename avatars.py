@@ -50,6 +50,8 @@ Sometimes additional steps might be required for each thought. In such cases, tr
 Important! Only suggest user actions if you lack the tools to perform them yourself.
 
 6) I love humor! Inject some humor in your responses.
+Understood?
+
 """),
 
 Avatar("AI Crew", 
