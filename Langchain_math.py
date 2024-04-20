@@ -1,20 +1,20 @@
+import langchain
 import streamlit as st
-from langchain import hub
-from langchain.agents import AgentExecutor, create_react_agent
-from langchain.agents.tools import Tool
-from langchain.chains import LLMMathChain
-from langchain_community.callbacks import StreamlitCallbackHandler
 from langchain_community.tools import WikipediaQueryRun
 from langchain_community.utilities import WikipediaAPIWrapper
-from langchain_core.prompts import ChatPromptTemplate
+from langchain import hub
+from langchain.agents import AgentExecutor
 from langchain_experimental.tools import PythonREPLTool
+from langchain.agents import create_react_agent
+from langchain_core.prompts import ChatPromptTemplate
 from langchain_groq import ChatGroq
-from langchain_core.runnables import RunnableConfig
 
 wiki_api_wrapper = WikipediaAPIWrapper(top_k_results=3, doc_content_chars_max=4000)
 wikipedia_tool = WikipediaQueryRun(api_wrapper=wiki_api_wrapper)
 
+
 tools = [PythonREPLTool(), wikipedia_tool]
+
 
 instructions = """You are an agent designed to answer user questions to the best of your ability.
 You pride yourself in the accuracy of the responses you provide. You can,
@@ -34,21 +34,9 @@ base_prompt = hub.pull("langchain-ai/react-agent-template")
 prompt = base_prompt.partial(instructions=instructions)
 agent = create_react_agent(ChatGroq(temperature=0, model_name="llama3-70b-8192"), tools, prompt)
 agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True)
-
-def display_thought_process(thoughts):
-    st.write("Agent's Thought Process:")
-    for thought in thoughts:
-        st.write(thought)
-
-input = st.text_input("What would you like to solve?")
+input = st.chat_input("What would you like to solve?")
 if input:
-    with st.spinner("Agent is thinking..."):
-        output, thoughts = agent_executor.invoke({"input": input}, return_thoughts=True)
-        st.write("Agent's Response:", output)
-        display_thought_process(thoughts)
+    st.write(agent_executor.invoke({"input": input}))
 
-        # Add Streamlit callback handler
-        st_callback = StreamlitCallbackHandler(st.empty())
-        cfg = RunnableConfig()
-        cfg["callbacks"] = [st_callback]
-        agent_executor.invoke({"input": input}, cfg)
+
+
